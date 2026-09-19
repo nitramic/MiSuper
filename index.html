@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>MiSuper - Control de Compras</title>
+<meta name="theme-color" content="#16a34a" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <h1>🛒 MiSuper</h1>
+    <nav class="tabs">
+      <button class="tab-btn active" data-view="scan">Escanear</button>
+      <button class="tab-btn" data-view="tickets">Tickets</button>
+      <button class="tab-btn" data-view="dashboard">Resumen</button>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- SCAN VIEW -->
+    <section id="view-scan" class="view active">
+      <div class="card">
+        <h2>Nuevo ticket</h2>
+        <p class="muted">Sacá una foto, elegí una imagen o subí un PDF del ticket.</p>
+        <div class="capture-row">
+          <label class="btn-primary file-btn">
+            📷 Cámara
+            <input type="file" id="input-camera" accept="image/*" capture="environment" hidden />
+          </label>
+          <label class="btn-secondary file-btn">
+            🖼️ Archivo (foto o PDF)
+            <input type="file" id="input-file" accept="image/*,application/pdf" hidden />
+          </label>
+        </div>
+        <div id="preview-area"></div>
+      </div>
+
+      <div class="card" id="ocr-progress-card" hidden>
+        <h3>Procesando…</h3>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <p id="progress-text" class="muted">Preparando…</p>
+      </div>
+
+      <div class="card" id="review-card" hidden>
+        <h2>Revisá y corregí</h2>
+        <p class="muted">El OCR puede fallar. Ajustá lo que haga falta antes de guardar.</p>
+
+        <div class="field-row">
+          <label>Comercio
+            <input type="text" id="field-store" placeholder="Ej: Supermercado XX" />
+          </label>
+          <label>Fecha
+            <input type="date" id="field-date" />
+          </label>
+        </div>
+
+        <table class="items-table" id="items-table">
+          <thead>
+            <tr><th>Producto</th><th>Cant.</th><th>Precio</th><th></th></tr>
+          </thead>
+          <tbody id="items-tbody"></tbody>
+        </table>
+        <button class="btn-link" id="btn-add-item">+ Agregar producto</button>
+
+        <div class="field-row total-row">
+          <label>Total del ticket
+            <input type="number" step="0.01" id="field-total" placeholder="0.00" />
+          </label>
+          <button class="btn-link" id="btn-recalc-total">Calcular desde productos</button>
+        </div>
+
+        <details id="raw-ocr-details">
+          <summary>Ver texto reconocido (OCR crudo)</summary>
+          <pre id="raw-ocr-text"></pre>
+        </details>
+
+        <div class="actions-row">
+          <button class="btn-secondary" id="btn-discard">Descartar</button>
+          <button class="btn-primary" id="btn-save-ticket">Guardar ticket</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TICKETS VIEW -->
+    <section id="view-tickets" class="view">
+      <div class="card">
+        <h2>Tickets guardados</h2>
+        <div class="field-row">
+          <label>Filtrar por mes
+            <input type="month" id="filter-month" />
+          </label>
+        </div>
+        <div id="tickets-list"></div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD VIEW -->
+    <section id="view-dashboard" class="view">
+      <div class="card">
+        <h2>Resumen mensual</h2>
+        <label>Mes
+          <input type="month" id="dashboard-month" />
+        </label>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <span class="stat-value" id="stat-total">$0</span>
+            <span class="stat-label">Gastado</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="stat-tickets">0</span>
+            <span class="stat-label">Tickets</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="stat-items">0</span>
+            <span class="stat-label">Productos</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="stat-avg">$0</span>
+            <span class="stat-label">Promedio/ticket</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Historial de los últimos 6 meses</h3>
+        <canvas id="chart-months" width="600" height="220"></canvas>
+      </div>
+
+      <div class="card">
+        <h3>Productos que más comprás (por gasto)</h3>
+        <table class="items-table" id="top-products-table">
+          <thead><tr><th>Producto</th><th>Veces</th><th>Total gastado</th></tr></thead>
+          <tbody id="top-products-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
