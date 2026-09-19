@@ -1,6 +1,7 @@
-import { saveTicket, deleteTicket, getAllTickets, importTickets, newId } from "./db.js";
+import { saveTicket, deleteTicket, getAllTickets, importTickets, upsertKnownProduct, getKnownProducts, newId } from "./db.js";
 import { parseReceiptText } from "./parser.js";
 import { fileToImageCanvases, runOCR } from "./ocr.js";
+import { findBestMatch } from "./fuzzy.js";
 
 // ---------- Tab navigation ----------
 const tabButtons = document.querySelectorAll(".tab-btn");
@@ -88,22 +89,38 @@ const fieldTotal = document.getElementById("field-total");
 const itemsTbody = document.getElementById("items-tbody");
 const rawOcrText = document.getElementById("raw-ocr-text");
 
-function showReview() {
+async function showReview() {
   reviewCard.hidden = false;
   fieldStore.value = currentDraft.store || "";
   fieldDate.value = currentDraft.date;
   fieldTotal.value = currentDraft.total.toFixed(2);
   rawOcrText.textContent = currentDraft.rawText;
   itemsTbody.innerHTML = "";
-  currentDraft.items.forEach((item) => addItemRow(item));
-  if (currentDraft.items.length === 0) addItemRow({ name: "", qty: 1, price: 0 });
+
+  const knownProducts = await getKnownProducts();
+  let correctionsMade = 0;
+  currentDraft.items.forEach((item) => {
+    const match = findBestMatch(item.name, knownProducts);
+    if (match && match.name !== item.name) {
+      addItemRow({ ...item, name: match.name }, true);
+      correctionsMade++;
+    } else {
+      addItemRow(item, false);
+    }
+  });
+  if (currentDraft.items.length === 0) addItemRow({ name: "", qty: 1, price: 0 }, false);
+
+  if (correctionsMade > 0) {
+    console.info(`Diccionario personal: ${correctionsMade} producto(s) auto-corregido(s).`);
+  }
   reviewCard.scrollIntoView({ behavior: "smooth" });
 }
 
-function addItemRow(item) {
+function addItemRow(item, autoCorrected) {
   const tr = document.createElement("tr");
+  const hint = autoCorrected ? ' title="Corregido con tu diccionario personal" style="background:#f0fdf4"' : "";
   tr.innerHTML = `
-    <td><input type="text" class="it-name" value="${escapeAttr(item.name)}" placeholder="Producto" /></td>
+    <td><input type="text" class="it-name"${hint} value="${escapeAttr(item.name)}" placeholder="Producto" /></td>
     <td><input type="number" step="0.01" class="it-qty" value="${item.qty}" /></td>
     <td><input type="number" step="0.01" class="it-price" value="${item.price}" /></td>
     <td><button class="row-del" title="Eliminar">✕</button></td>
@@ -157,6 +174,9 @@ document.getElementById("btn-save-ticket").addEventListener("click", async () =>
     createdAt: new Date().toISOString(),
   };
   await saveTicket(ticket);
+  for (const item of items) {
+    await upsertKnownProduct(item.name);
+  }
   reviewCard.hidden = true;
   previewArea.innerHTML = "";
   currentDraft = null;

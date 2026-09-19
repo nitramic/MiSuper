@@ -1,6 +1,7 @@
 const DB_NAME = "misuper";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = "tickets";
+const PRODUCTS_STORE = "products";
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -11,7 +12,54 @@ function openDB() {
         const store = db.createObjectStore(STORE, { keyPath: "id" });
         store.createIndex("date", "date");
       }
+      if (!db.objectStoreNames.contains(PRODUCTS_STORE)) {
+        db.createObjectStore(PRODUCTS_STORE, { keyPath: "key" });
+      }
     };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function normalizeKey(name) {
+  return String(name)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Learns a product name the user confirmed/corrected, so future OCR reads
+// of similar (noisy) text can be auto-corrected against this personal dictionary.
+export async function upsertKnownProduct(name) {
+  const key = normalizeKey(name);
+  if (key.length < 3) return;
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PRODUCTS_STORE, "readwrite");
+    const store = tx.objectStore(PRODUCTS_STORE);
+    const getReq = store.get(key);
+    getReq.onsuccess = () => {
+      const existing = getReq.result;
+      store.put({
+        key,
+        name: name.trim(),
+        count: (existing?.count || 0) + 1,
+        updatedAt: new Date().toISOString(),
+      });
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function getKnownProducts() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PRODUCTS_STORE, "readonly");
+    const req = tx.objectStore(PRODUCTS_STORE).getAll();
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
