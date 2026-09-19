@@ -1,4 +1,4 @@
-import { saveTicket, deleteTicket, getAllTickets, newId } from "./db.js";
+import { saveTicket, deleteTicket, getAllTickets, importTickets, newId } from "./db.js";
 import { parseReceiptText } from "./parser.js";
 import { fileToImageCanvases, runOCR } from "./ocr.js";
 
@@ -211,6 +211,46 @@ function escapeHtml(str) {
   d.textContent = str;
   return d.innerHTML;
 }
+
+// ---------- Backup: export / import ----------
+document.getElementById("btn-export").addEventListener("click", async () => {
+  const tickets = await getAllTickets();
+  const payload = {
+    app: "misuper",
+    exportedAt: new Date().toISOString(),
+    tickets,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `misuper-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("input-import").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const payload = JSON.parse(text);
+    const tickets = Array.isArray(payload) ? payload : payload.tickets;
+    if (!Array.isArray(tickets)) throw new Error("Formato de backup inválido");
+    if (!confirm(`Se van a importar ${tickets.length} tickets. Los que ya existan (mismo id) se van a actualizar. ¿Continuar?`)) return;
+    const count = await importTickets(tickets);
+    alert(`Backup importado: ${count} tickets ✅`);
+    renderTicketsList();
+    renderDashboard();
+  } catch (err) {
+    alert("No se pudo importar el backup: " + err.message);
+    console.error(err);
+  }
+});
 
 // ---------- Dashboard ----------
 const dashboardMonth = document.getElementById("dashboard-month");

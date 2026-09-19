@@ -50,3 +50,14 @@ export async function getAllTickets() {
 export function newId() {
   return "t_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
 }
+
+export async function importTickets(tickets) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    for (const t of tickets) store.put(t);
+    tx.oncomplete = () => resolve(tickets.length);
+    tx.onerror = () => reject(tx.error);
+  });
+}
