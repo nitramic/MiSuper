@@ -210,7 +210,10 @@ async function renderTicketsList() {
         <strong>${escapeHtml(t.store)}</strong>
         <span>$${t.total.toFixed(2)}</span>
       </div>
-      <div class="ticket-card-sub">${t.date} · ${t.items.length} productos</div>
+      <div class="ticket-card-sub">
+        <input type="date" class="ticket-date-edit" value="${t.date}" />
+        · ${t.items.length} productos
+      </div>
       <div class="ticket-items-mini">${escapeHtml(itemsPreview)}${more}</div>
       <div class="ticket-card-actions">
         <button class="btn-secondary btn-del">Eliminar</button>
@@ -221,6 +224,13 @@ async function renderTicketsList() {
         await deleteTicket(t.id);
         renderTicketsList();
       }
+    });
+    div.querySelector(".ticket-date-edit").addEventListener("change", async (e) => {
+      const newDate = e.target.value;
+      if (!newDate) return;
+      t.date = newDate;
+      await saveTicket(t);
+      renderTicketsList();
     });
     ticketsList.appendChild(div);
   }

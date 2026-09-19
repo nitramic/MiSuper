@@ -153,7 +153,8 @@ input, select {
 .ticket-card-head { display: flex; justify-content: space-between; align-items: baseline; }
 .ticket-card-head strong { font-size: 1rem; }
 .ticket-card-head span { color: var(--green-dark); font-weight: 700; }
-.ticket-card-sub { color: var(--muted); font-size: 0.8rem; margin: 0.15rem 0 0.4rem; }
+.ticket-card-sub { color: var(--muted); font-size: 0.8rem; margin: 0.15rem 0 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
+.ticket-date-edit { width: auto; padding: 0.2rem 0.35rem; font-size: 0.8rem; }
 .ticket-items-mini { font-size: 0.85rem; color: var(--text); }
 .ticket-card-actions { margin-top: 0.5rem; display: flex; gap: 0.5rem; }
 .ticket-card-actions button { font-size: 0.8rem; padding: 0.4rem 0.7rem; }
