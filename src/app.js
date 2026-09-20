@@ -2,6 +2,7 @@ import { saveTicket, deleteTicket, getAllTickets, importTickets, upsertKnownProd
 import { parseReceiptText } from "./parser.js";
 import { fileToImageCanvases, runOCR } from "./ocr.js";
 import { findBestMatch } from "./fuzzy.js";
+import * as drive from "./drive.js";
 
 // ---------- Tab navigation ----------
 const tabButtons = document.querySelectorAll(".tab-btn");
@@ -243,13 +244,17 @@ function escapeHtml(str) {
 }
 
 // ---------- Backup: export / import ----------
-document.getElementById("btn-export").addEventListener("click", async () => {
+async function buildBackupPayload() {
   const tickets = await getAllTickets();
-  const payload = {
+  return {
     app: "misuper",
     exportedAt: new Date().toISOString(),
     tickets,
   };
+}
+
+document.getElementById("btn-export").addEventListener("click", async () => {
+  const payload = await buildBackupPayload();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -281,6 +286,70 @@ document.getElementById("input-import").addEventListener("change", async (e) => 
     console.error(err);
   }
 });
+
+// ---------- Google Drive backup ----------
+const driveStatus = document.getElementById("drive-status");
+const driveSyncActions = document.getElementById("drive-sync-actions");
+const driveLastSync = document.getElementById("drive-last-sync");
+const btnDriveConnect = document.getElementById("btn-drive-connect");
+
+function refreshDriveUI() {
+  if (!drive.isConfigured()) {
+    driveStatus.textContent = "Todavía no configurado (falta el Client ID de Google).";
+    btnDriveConnect.disabled = true;
+    return;
+  }
+  if (drive.isConnected()) {
+    driveStatus.textContent = "Conectado a Google Drive ✅";
+    driveSyncActions.hidden = false;
+  } else {
+    driveStatus.textContent = "No conectado.";
+    driveSyncActions.hidden = true;
+  }
+  const last = drive.getLastSync();
+  driveLastSync.textContent = last ? "Última sincronización: " + new Date(last).toLocaleString() : "";
+}
+
+btnDriveConnect.addEventListener("click", async () => {
+  try {
+    await drive.connect();
+    refreshDriveUI();
+    alert("Conectado a Google Drive ✅. Ahora podés sincronizar.");
+  } catch (err) {
+    alert("No se pudo conectar con Google: " + err.message);
+    console.error(err);
+  }
+});
+
+document.getElementById("btn-drive-backup").addEventListener("click", async () => {
+  try {
+    const payload = await buildBackupPayload();
+    await drive.backupToDrive(JSON.stringify(payload));
+    refreshDriveUI();
+    alert("Backup subido a Google Drive ✅");
+  } catch (err) {
+    alert("No se pudo subir el backup: " + err.message);
+    console.error(err);
+  }
+});
+
+document.getElementById("btn-drive-restore").addEventListener("click", async () => {
+  try {
+    const payload = await drive.restoreFromDrive();
+    const tickets = Array.isArray(payload) ? payload : payload.tickets;
+    if (!Array.isArray(tickets)) throw new Error("Formato de backup inválido");
+    if (!confirm(`Se van a importar ${tickets.length} tickets desde Drive. Los que ya existan (mismo id) se van a actualizar. ¿Continuar?`)) return;
+    const count = await importTickets(tickets);
+    alert(`Restaurado desde Drive: ${count} tickets ✅`);
+    renderTicketsList();
+    renderDashboard();
+  } catch (err) {
+    alert("No se pudo restaurar desde Drive: " + err.message);
+    console.error(err);
+  }
+});
+
+refreshDriveUI();
 
 // ---------- Dashboard ----------
 const dashboardMonth = document.getElementById("dashboard-month");

@@ -101,8 +101,21 @@
       </div>
 
       <div class="card">
-        <h3>Backup</h3>
-        <p class="muted">Tus tickets se guardan solo en este celular/navegador. Exportá un archivo de respaldo de vez en cuando para no perder el historial.</p>
+        <h3>Backup en Google Drive</h3>
+        <p class="muted" id="drive-status">No conectado.</p>
+        <div class="actions-row">
+          <button class="btn-secondary" id="btn-drive-connect">🔗 Conectar con Google</button>
+        </div>
+        <div class="actions-row" id="drive-sync-actions" hidden>
+          <button class="btn-primary" id="btn-drive-backup">☁️ Sincronizar ahora</button>
+          <button class="btn-secondary" id="btn-drive-restore">⬇️ Restaurar desde Drive</button>
+        </div>
+        <p class="muted" id="drive-last-sync"></p>
+      </div>
+
+      <div class="card">
+        <h3>Backup manual (archivo)</h3>
+        <p class="muted">Alternativa sin Google: descargá un archivo de respaldo a mano.</p>
         <div class="actions-row">
           <button class="btn-secondary" id="btn-export">⬇️ Exportar backup</button>
           <label class="btn-secondary file-btn" id="btn-import-label">
@@ -159,6 +172,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script type="module" src="src/app.js"></script>
 </body>
 </html>

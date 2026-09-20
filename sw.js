@@ -1,4 +1,4 @@
-const CACHE_NAME = "misuper-v4";
+const CACHE_NAME = "misuper-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const APP_SHELL = [
   "./src/parser.js",
   "./src/ocr.js",
   "./src/fuzzy.js",
+  "./src/drive.js",
   "./icons/icon.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
