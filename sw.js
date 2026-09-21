@@ -1,4 +1,4 @@
-const CACHE_NAME = "misuper-v5";
+const CACHE_NAME = "misuper-v6";
 const APP_SHELL = [
   "./",
   "./index.html",

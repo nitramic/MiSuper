@@ -2,7 +2,7 @@
 // the Drive REST API directly from the browser. Scope is drive.file: the app
 // can only see/edit files it created itself, never the rest of the user's Drive.
 
-export const DRIVE_CLIENT_ID = "PONER_CLIENT_ID_AQUI.apps.googleusercontent.com";
+export const DRIVE_CLIENT_ID = "336894059186-r73rfh43i44rdvut397ervtfoprbjtbi.apps.googleusercontent.com";
 
 const SCOPE = "https://www.googleapis.com/auth/drive.file";
 const BACKUP_FILENAME = "misuper-backup.json";
